@@ -1,20 +1,30 @@
+
 const mongoose = require("mongoose");
 
-
-const tokenBlacklistSchema = new mongoose.Schema({
-    token: {
-        type: String,
-        required: [ true, "Token is required to blacklist" ],
-        unique: [ true, "Token is already blacklisted" ]
+const tokenBlacklistSchema = new mongoose.Schema(
+    {
+        // Store a SHA-256 hash of the JWT rather than the raw token.
+        tokenHash: {
+            type: String,
+            required: [true, "Token hash is required"],
+            unique: true,
+            select: false,
+        },
+    },
+    {
+        timestamps: true,
     }
-}, {
-    timestamps: true
-})
+);
 
-tokenBlacklistSchema.index({ createdAt: 1 }, {
-    expireAfterSeconds: 60 * 60 * 24 * 3 // 3 days
-})
+// Automatically remove blacklist records after three days.
+tokenBlacklistSchema.index(
+    { createdAt: 1 },
+    { expireAfterSeconds: 60 * 60 * 24 * 3 }
+);
 
-const tokenBlackListModel = mongoose.model("tokenBlackList", tokenBlacklistSchema);
+const TokenBlacklist = mongoose.model(
+    "TokenBlacklist",
+    tokenBlacklistSchema
+);
 
-module.exports = tokenBlackListModel;
+module.exports = TokenBlacklist;

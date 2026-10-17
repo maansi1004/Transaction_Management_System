@@ -1,52 +1,75 @@
-const mongoose=require("mongoose")
-const bcrypt=require("bcryptjs")
 
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
 
-//endpoints for register and login
-const userSchema=new mongoose.Schema({
-    email:{
-        type:String,
-        required:[true,"Email is required for creating a user"],
-        trim:true,
-        lowercase:true,
-        match:[/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,],
-        unique:[true,"Email aleady exists"]
-    },
-    name:{
-        type:String,
-        required:[true,"Name is required for creating account"],
+const userSchema = new mongoose.Schema(
+    {
+        email: {
+            type: String,
+            required: [true, "Email is required"],
+            trim: true,
+            lowercase: true,
+            maxlength: 254,
+            unique: true,
+            match: [
+                /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                "Please provide a valid email address"
+            ]
+        },
 
-    },
-    password:{
-        type:String,
-        required:[true,"Password is required for creating account"],
-        minlength:[6,"Password should not be more than 6 characters"],
-        select:false
-    },
-    //system user is a special user that is used to create initial funds for new users, and to reverse transactions, it cannot be modified or deleted
-   //one who has access to database can create a system user, so that it can be used to create initial funds for new users, and to reverse transactions, it cannot be modified or deleted
-    systemUser:{
-type:Boolean,
-default:false,
-immutable:true,
-//system user cannot be modified or deleted
-select:false//system user cannot be modified or deleted, so it should not be selected in queries
-    },
-    timestamps:true
+        name: {
+            type: String,
+            required: [true, "Name is required"],
+            trim: true,
+            minlength: 2,
+            maxlength: 80
+        },
 
-    
-})
-userSchema.pre("save",async function(next){
-//hashing password before storing
-if(!this.isModified("password")){
-    return  //if password changed in future 
-}
-const hash=await bcrypt.hash(this.password,10)
-this.password=hash
-return 
-})
-userSchema.methods.comparePassword=async function(password){
-return await bcrypt.compare(password,this.password) //comparing password entered by user to hashed pswrd stored
-}
-const userModel=mongoose.model("user",userSchema)
-model.exports=userModel
+        password: {
+            type: String,
+            required: [true, "Password is required"],
+            minlength: 12,
+            maxlength: 72,
+            select: false
+        },
+balanceMinor: {
+    type: Number,
+    required: true,
+    default: 0,
+    min: 0,
+    validate: {
+        validator: Number.isSafeInteger,
+        message: "Balance must be a safe integer",
+    },
+},
+        // Keep false for normal users.
+        // Provision any system account separately.
+        systemUser: {
+            type: Boolean,
+            default: false,
+            immutable: true,
+            select: false
+        }
+    },
+    {
+        timestamps: true
+    }
+);
+
+// Hash only when the password is new or changed.
+userSchema.pre("save", async function () {
+    if (!this.isModified("password")) {
+        return;
+    }
+
+    this.password = await bcrypt.hash(this.password, 12);
+});
+
+// Verify a submitted password against the saved hash.
+userSchema.methods.comparePassword = function (password) {
+    return bcrypt.compare(password, this.password);
+};
+
+const userModel = mongoose.model("User", userSchema);
+
+module.exports = userModel;
