@@ -6,9 +6,10 @@ const TransactionRoutes=Router();
 /*
 *-POST /api/transactions
 */
-TransactionRoutes.post("/",authMiddleware.authMiddleware, transactionController.createTransaction)
+
+transactionRoutes.post("/",authMiddleware.authMiddleware, transactionController.createTransaction)
+transactionRoutes.post("/system/initial-funds",authMiddleware.authSystemUserMiddleware, transactionController.createInitialFunds)
 
 
 
-
-module.exports=TransactionRoutes;
+module.exports=transactionRoutes;

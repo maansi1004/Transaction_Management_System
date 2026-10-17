@@ -130,7 +130,7 @@ async function createTransaction(req, res) {
 
         await (() => {
             return new Promise((resolve) => setTimeout(resolve, 15 * 1000));
-        })()
+        })() //credit ledger entry is created after 15 seconds to simulate a delay in processing the transaction, so that we can test the idempotency key validation and transaction status check
 
         const creditLedgerEntry = await ledgerModel.create([ {
             account: toAccount,
@@ -235,6 +235,60 @@ async function createInitialFundsTransaction(req, res) {
 
 
 }
+async function createInitialFundsTransaction(req,res){
+    const {toAccount,amount,idempotencyKey}=req.body
+    if(!toAccount || !amount || !idempotencyKey){
+        return res.status(400).json({
+            message:"toAccount, amount and idempotencyKey are required"
+        })
+    }
+    const toUserAccount=await accountModel.findOne({
+        _id:toAccount,
+    })
+    if(!toUserAccount){
+        return res.status(400).json({
+            message:"Invalid toAccount"
+        })
+    }
+    const fromUserAccount=await accountModel.findOne({
+        systemUser:true,
+        user:req.user._id
+    })
+    if(!fromUserAccount){
+        return res.status(400).json({
+            message:"System user account not found"
+        })
+    }
+    session=await mongoose.startSession()
+    session.startTransaction()
+    const transaction=await new transactionModel({
+        fromAccount:fromUserAccount._id,
+        toAccount,
+        amount,
+        idempotencyKey,
+        status:"PENDING"
+    })  
+}
+const debitLedgerEntry=await ledgerModel.create([{
+    account:fromUserAccount._id,
+    amount:amount,
+    transaction:transaction._id,
+    type:"DEBIT"
+}],{session:session})
+const creditLedgerEntry=await ledgerModel.create([{
+    account:toAccount,
+    amount:amount,
+    transaction:transaction._id,
+    type:"CREDIT"
+}],{session:session})
+transaction.status="COMPLETED"
+await transaction.save({session:session})
+await session.commitTransaction()
+session.endSession()
+return res.status(201).json({
+    message:"Initial funds transaction completed successfully",
+    transaction:transaction
+})
 
 module.exports = {
     createTransaction,

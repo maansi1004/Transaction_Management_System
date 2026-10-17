@@ -1,5 +1,7 @@
 const userModel=require("../models/user.model")
 const jwt=require("jsonwebtoken")
+const emailService=require("../services/email.service") 
+const tokenBlackListModel=require("../models/blackList.model")
 /*
 user register controller
 POST /api/auth/register
@@ -59,10 +61,28 @@ res.status(201).json({
     token
 })
     }
+    /* -User Logout Controller
+    *-POST /api/auth/logout
+    *-logout the user by clearing the cookie
+     */
 
+async function userLogoutController(req,res){
+  const token=req.cookies.token || req.headers.authorization?.split(" ")[1]
+  if(!token){
+    return res.status(400).json({
+        message:"Unauthorized access, please login to continue"
+    })
+}
 
+await tokenBlackListModel.create({ token });
 
+res.clearCookie("token");
+res.status(200).json({
+    message: "User logged out successfully"
+});
+}
 module.exports={
     userRegisterController,
-    userLoginController
+    userLoginController,
+    userLogoutController
 }

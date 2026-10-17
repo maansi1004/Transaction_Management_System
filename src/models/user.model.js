@@ -23,6 +23,15 @@ const userSchema=new mongoose.Schema({
         minlength:[6,"Password should not be more than 6 characters"],
         select:false
     },
+    //system user is a special user that is used to create initial funds for new users, and to reverse transactions, it cannot be modified or deleted
+   //one who has access to database can create a system user, so that it can be used to create initial funds for new users, and to reverse transactions, it cannot be modified or deleted
+    systemUser:{
+type:Boolean,
+default:false,
+immutable:true,
+//system user cannot be modified or deleted
+select:false//system user cannot be modified or deleted, so it should not be selected in queries
+    },
     timestamps:true
 
     
