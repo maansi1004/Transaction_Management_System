@@ -1,7 +1,7 @@
 const userModel=require("../models/user.model")
 const jwt=require("jsonwebtoken")
 
-
+//checks if the request has a valid token to proceed to the next middleware or controller, if not return unauthorized access error
 async function authMiddleware(req,res,next){
     const token=req.cookies.token || req.headers.authorization?.split(" ")[1]
      if(!token){
