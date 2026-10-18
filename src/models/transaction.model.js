@@ -3,10 +3,18 @@ const mongoose = require("mongoose");
 
 const transactionSchema = new mongoose.Schema(
     {
+        transactionType: {
+  type: String,
+  enum: ["TRANSFER", "OPENING_BALANCE"],
+  default: "TRANSFER",
+  required: true,
+},
         fromAccount: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Account",
-            required: [true, "Source account is required"],
+              required: function () {
+    return this.transactionType === "TRANSFER";
+  },
             index: true,
         },
 

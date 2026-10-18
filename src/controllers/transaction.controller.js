@@ -176,7 +176,7 @@ async function executeTransfer({
                     requestHash,
                     status: "PENDING",
                 }],
-                { session }
+                { session ,ordered:true}
             );
 
             // Conditional debit prevents overdrawing under concurrency.
@@ -244,7 +244,7 @@ async function executeTransfer({
                         balanceAfterMinor: updatedDestination.balanceMinor,
                     },
                 ],
-                { session }
+                { session ,ordered:true}
             );
 
             transaction.status = "SUCCESS";

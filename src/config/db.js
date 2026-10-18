@@ -1,15 +1,26 @@
-const mongoose=require("mongoose")
 
+const mongoose = require("mongoose");
 
-function connectToDB(){
+async function connectToDB() {
+  try {
+    const uri = process.env.MONGODB_URI;
 
-    mongoose.connect(process.env.MONGO_URI)
-    .then(()=>{
-console.log("server connected to db")
-    })
-    .catch(err=>{
-        console.log("Error connecting to db")
-        process.exit(1)
-    })
+    if (!uri) {
+      throw new Error(
+        "MONGODB_URI is missing. Check your root .env file."
+      );
+    }
+
+    await mongoose.connect(uri, {
+      serverSelectionTimeoutMS: 10000,
+    });
+
+    console.log("MongoDB connected successfully!");
+    console.log("Database:", mongoose.connection.name);
+  } catch (error) {
+    console.error("MongoDB connection failed:", error.message);
+    throw error;
+  }
 }
-module.exports=connectToDB
+
+module.exports = connectToDB;
