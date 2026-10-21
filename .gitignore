@@ -1,3 +1,23 @@
 node_modules/
 .env
 src/.env
+
+# Secrets
+.env
+.env.*
+!.env.example
+src/.env
+
+# Node dependencies
+node_modules/
+frontend/node_modules/
+
+# Python environments and generated files
+.venv/
+ml-service/.venv/
+__pycache__/
+*.pyc
+
+# ML datasets and generated model artifacts
+ml-service/data/
+ml-service/models/*.joblib

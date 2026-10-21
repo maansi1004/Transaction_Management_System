@@ -73,10 +73,14 @@ async function findExistingTransaction(initiatedBy, idempotencyKey) {
     return Transaction.findOne({
         initiatedBy,
         idempotencyKey,
-    });
+    }).select("+requestHash");
 }
 
 function replayResult(existing, requestHash) {
+    console.log("Existing transaction:", existing._id);
+    console.log("Stored request hash:", existing.requestHash);
+    console.log("Incoming request hash:", requestHash);
+
     if (existing.requestHash !== requestHash) {
         throw httpError(
             409,
@@ -96,6 +100,44 @@ function replayResult(existing, requestHash) {
         409,
         `This idempotency key belongs to a transaction with status ${existing.status}. Use a new key for a new transfer.`
     );
+}
+async function getTransactionHistory(req, res, next) {
+  try {
+    const userId = req.user?._id || req.user?.id;
+
+    if (!userId || !mongoose.isValidObjectId(userId)) {
+      return res.status(401).json({
+        message: "Unauthorized access, please login to continue",
+      });
+    }
+
+    const userAccounts = await Account.find({ user: userId })
+      .select("_id")
+      .lean();
+
+    const accountIds = userAccounts.map((account) => account._id);
+
+    if (accountIds.length === 0) {
+      return res.status(200).json({ transactions: [] });
+    }
+
+    const transactions = await Transaction.find({
+      $or: [
+        { fromAccount: { $in: accountIds } },
+        { toAccount: { $in: accountIds } },
+      ],
+    })
+      .select(
+        "_id transactionType fromAccount toAccount amountMinor status createdAt updatedAt"
+      )
+      .sort({ createdAt: -1 })
+      .limit(100)
+      .lean();
+
+    return res.status(200).json({ transactions });
+  } catch (error) {
+    next(error);
+  }
 }
 
 async function executeTransfer({
@@ -305,7 +347,7 @@ async function createTransaction(req, res, next) {
                 await emailService.sendTransactionEmail(
                     req.user.email,
                     req.user.name,
-                    amountMinor / 100,
+                    amountMinor ,
                     toAccount
                 );
             } catch (emailError) {
@@ -383,4 +425,5 @@ async function createInitialFundsTransaction(req, res, next) {
 module.exports = {
     createTransaction,
     createInitialFundsTransaction,
+    getTransactionHistory
 };

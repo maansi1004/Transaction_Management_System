@@ -1,3 +1,4 @@
+// src/models/user.model.js
 
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
@@ -13,8 +14,8 @@ const userSchema = new mongoose.Schema(
             unique: true,
             match: [
                 /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                "Please provide a valid email address"
-            ]
+                "Please provide a valid email address",
+            ],
         },
 
         name: {
@@ -22,7 +23,7 @@ const userSchema = new mongoose.Schema(
             required: [true, "Name is required"],
             trim: true,
             minlength: 2,
-            maxlength: 80
+            maxlength: 80,
         },
 
         password: {
@@ -30,29 +31,20 @@ const userSchema = new mongoose.Schema(
             required: [true, "Password is required"],
             minlength: 12,
             maxlength: 72,
-            select: false
+            select: false,
         },
-balanceMinor: {
-    type: Number,
-    required: true,
-    default: 0,
-    min: 0,
-    validate: {
-        validator: Number.isSafeInteger,
-        message: "Balance must be a safe integer",
-    },
-},
+
         // Keep false for normal users.
         // Provision any system account separately.
         systemUser: {
             type: Boolean,
             default: false,
             immutable: true,
-            select: false
-        }
+            select: false,
+        },
     },
     {
-        timestamps: true
+        timestamps: true,
     }
 );
 

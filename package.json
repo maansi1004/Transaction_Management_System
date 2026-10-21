@@ -4,8 +4,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "npx nodemon server.js",
-    "start": "node src/server.js"
+    
+    "start": "node src/server.js",
+      "dev": "nodemon src/server.js"
   },
   "keywords": [],
   "author": "",
@@ -19,5 +20,9 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.11.2",
     "nodemailer": "^10.1.2"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "tailwindcss": "^4.3.3"
   }
 }
