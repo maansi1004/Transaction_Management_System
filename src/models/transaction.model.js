@@ -75,11 +75,41 @@ const transactionSchema = new mongoose.Schema(
             ref: "Transaction",
             default: null,
         },
+        fraud: {
+            score: {
+                type: Number,
+                min: 0,
+                max: 1,
+                default: null,
+            },
+            label: {
+                type: String,
+                enum: ["LOW", "MEDIUM", "HIGH"],
+                default: null,
+            },
+            reasons: {
+                type: [String],
+                default: [],
+            },
+            flagged: {
+                type: Boolean,
+                default: false,
+                index: true,
+            },
+            scoredAt: {
+                type: Date,
+                default: null,
+            },
+        },
     },
+    
+
     {
         timestamps: true,
     }
+    
 );
+
 
 // Prevent duplicate idempotency keys for the same initiating user.
 transactionSchema.index(
@@ -90,7 +120,8 @@ transactionSchema.index(
 // Support account transaction history queries.
 transactionSchema.index({ fromAccount: 1, createdAt: -1 });
 transactionSchema.index({ toAccount: 1, createdAt: -1 });
-
+// Index for the fraud review queue.
+transactionSchema.index({ "fraud.flagged": 1, createdAt: -1 });
 // Prevent more than one reversal transaction for the same original transaction.
 transactionSchema.index(
     { reversesTransaction: 1 },

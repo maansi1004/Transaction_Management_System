@@ -690,7 +690,11 @@ function App() {
       });
       const data = await readResponse(res);
       if (!res.ok) throw new Error(data.message || "Transfer failed.");
-
+if (data.warning) {
+  setNotice(`⚠️ ${data.warning}`);
+} else {
+  setNotice(data.message || "Transfer processed successfully.");
+}
       setNotice(data.message || "Transfer processed successfully.");
       setAmount("");
       setDestination("");
@@ -1091,12 +1095,32 @@ function App() {
 }
 
 // ─── Transaction table ────────────────────────────────────────────────────────
+
 function TransactionTable({ transactions, loading, error, selectedAccountId }) {
   function direction(tx) {
     if (!selectedAccountId) return null;
     if (String(tx.fromAccount) === selectedAccountId) return "debit";
     if (String(tx.toAccount) === selectedAccountId) return "credit";
     return null;
+  }
+
+  function FraudBadge({ fraud }) {
+    if (!fraud?.label || fraud.label === "LOW") return null;
+
+    const styles = {
+      MEDIUM: "bg-amber-100 text-amber-700 border-amber-200",
+      HIGH:   "bg-red-100 text-red-700 border-red-200",
+    };
+    const icons = { MEDIUM: "⚠️", HIGH: "🚨" };
+
+    return (
+      <span
+        title={fraud.reasons?.join(" · ") || ""}
+        className={`ml-2 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold ${styles[fraud.label]}`}
+      >
+        {icons[fraud.label]} {fraud.label}
+      </span>
+    );
   }
 
   return (
@@ -1137,7 +1161,7 @@ function TransactionTable({ transactions, loading, error, selectedAccountId }) {
                 return (
                   <tr key={tx._id} className="hover:bg-slate-50">
                     <td className="px-6 py-4">
-                      <p className="font-semibold">
+                      <p className="flex flex-wrap items-center gap-1 font-semibold">
                         {dir === "debit" ? (
                           <span className="text-red-600">↑ Sent</span>
                         ) : dir === "credit" ? (
@@ -1145,7 +1169,15 @@ function TransactionTable({ transactions, loading, error, selectedAccountId }) {
                         ) : (
                           tx.transactionType || "TRANSFER"
                         )}
+                        {/* Fraud badge — only shown for MEDIUM and HIGH */}
+                        <FraudBadge fraud={tx.fraud} />
                       </p>
+                      {/* Show reasons on flagged transactions */}
+                      {tx.fraud?.flagged && tx.fraud.reasons?.length > 0 && (
+                        <p className="mt-1 text-xs text-amber-600">
+                          {tx.fraud.reasons[0]}
+                        </p>
+                      )}
                       <p className="mt-1 break-all text-xs text-slate-400">
                         {tx._id}
                       </p>
@@ -1162,7 +1194,9 @@ function TransactionTable({ transactions, loading, error, selectedAccountId }) {
                             ? "bg-emerald-100 text-emerald-700"
                             : tx.status === "PENDING"
                               ? "bg-amber-100 text-amber-700"
-                              : "bg-slate-100 text-slate-600"
+                              : tx.status === "FAILED"
+                                ? "bg-red-100 text-red-700"
+                                : "bg-slate-100 text-slate-600"
                         }`}
                       >
                         {tx.status || "UNKNOWN"}
