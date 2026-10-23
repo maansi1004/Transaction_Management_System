@@ -695,7 +695,7 @@ if (data.warning) {
 } else {
   setNotice(data.message || "Transfer processed successfully.");
 }
-      setNotice(data.message || "Transfer processed successfully.");
+      
       setAmount("");
       setDestination("");
       await loadAccounts();
